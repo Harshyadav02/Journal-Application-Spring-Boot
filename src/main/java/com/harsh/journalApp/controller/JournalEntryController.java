@@ -18,7 +18,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.harsh.journalApp.entity.JournalEntry;
+import com.harsh.journalApp.entity.User;
 import com.harsh.journalApp.service.JournalServiceEntry;
+import com.harsh.journalApp.service.UserService;
 
 @RestController
 @RequestMapping("/journal")
@@ -27,23 +29,31 @@ public class JournalEntryController {
     @Autowired
     private JournalServiceEntry journalServiceEntry ;
     
+    @Autowired
+    private UserService userService;
     
-    
-    @GetMapping   // getmethod
-    public List<JournalEntry> getAll(){
-        return journalServiceEntry.getAll();
+    @GetMapping("{userName}")   // getmethod
+    public ResponseEntity<?> getAllJournalOfUser(@PathVariable String userName){
+        User  user =  userService.findByUserName(userName);
+        List<JournalEntry> allJournalEntries = user.getJournalEntries();
+
+        if(allJournalEntries!=null && !allJournalEntries.isEmpty()){
+            return new ResponseEntity<>(allJournalEntries,HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @PostMapping     // post method
+    @PostMapping({"userName"})     // post method
     /* 1) @RequestBody defines that take data from the post request, 
       
        2) JournalEntry is type of data i.e the data will come in json only but auto serialization is done by @RestController 
        and convert to JournalEntry type and will store in variable  entries.
 
     */
-    public ResponseEntity<JournalEntry> createEntry(@RequestBody JournalEntry entries){
+    public ResponseEntity<JournalEntry> createEntry(@RequestBody JournalEntry entries, @PathVariable String userName){
         
         try {
+            User  user =  userService.findByUserName(userName);
             entries.setDate(LocalDateTime.now());
             journalServiceEntry.saveEntry(entries);
             return new ResponseEntity<>(entries,HttpStatus.CREATED);
