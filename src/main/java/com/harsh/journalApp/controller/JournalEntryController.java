@@ -1,7 +1,6 @@
 /* Router files */
 package com.harsh.journalApp.controller;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.bson.types.ObjectId;
@@ -23,61 +22,66 @@ import com.harsh.journalApp.service.JournalServiceEntry;
 import com.harsh.journalApp.service.UserService;
 
 @RestController
-@RequestMapping("/journal")
+@RequestMapping("/journal/")
 public class JournalEntryController {
 
     @Autowired
-    private JournalServiceEntry journalServiceEntry ;
-    
+    private JournalServiceEntry journalServiceEntry;
+
     @Autowired
     private UserService userService;
-    
-    @GetMapping("{userName}")   // getmethod
-    public ResponseEntity<?> getAllJournalOfUser(@PathVariable String userName){
-        User  user =  userService.findByUserName(userName);
+
+    @GetMapping("{userName}") // getmethod
+    public ResponseEntity<?> getAllJournalOfUser(@PathVariable String userName) {
+        User user = userService.findByUserName(userName);
+
         List<JournalEntry> allJournalEntries = user.getJournalEntries();
 
-        if(allJournalEntries!=null && !allJournalEntries.isEmpty()){
-            return new ResponseEntity<>(allJournalEntries,HttpStatus.OK);
+        if (allJournalEntries != null && !allJournalEntries.isEmpty()) {
+            return new ResponseEntity<>(allJournalEntries, HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @PostMapping({"userName"})     // post method
-    /* 1) @RequestBody defines that take data from the post request, 
-      
-       2) JournalEntry is type of data i.e the data will come in json only but auto serialization is done by @RestController 
-       and convert to JournalEntry type and will store in variable  entries.
+    @PostMapping("{userName}") // post method
+    /*
+     * 1) @RequestBody defines that take data from the post request,
+     * 
+     * 2) JournalEntry is type of data i.e the data will come in json only but auto
+     * serialization is done by @RestController
+     * and convert to JournalEntry type and will store in variable entries.
+     * 
+     */
+    public ResponseEntity<JournalEntry> createEntry(@RequestBody JournalEntry entries, @PathVariable String userName) {
 
-    */
-    public ResponseEntity<JournalEntry> createEntry(@RequestBody JournalEntry entries, @PathVariable String userName){
-        
         try {
-            User  user =  userService.findByUserName(userName);
-            entries.setDate(LocalDateTime.now());
-            journalServiceEntry.saveEntry(entries);
-            return new ResponseEntity<>(entries,HttpStatus.CREATED);
+            journalServiceEntry.saveEntry(entries, userName);
+            return new ResponseEntity<>(entries, HttpStatus.CREATED);
         } catch (Exception e) {
-            
+
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
 
     @GetMapping("id/{id}")
-    public ResponseEntity<JournalEntry> getById(@PathVariable ObjectId id){
+    public ResponseEntity<JournalEntry> getById(@PathVariable ObjectId id) {
 
         JournalEntry journalEntry = journalServiceEntry.findById(id);
         // System.out.println(journalEntry);
-       
-        if(journalEntry !=null){
+
+        if (journalEntry != null) {
             System.out.println(journalEntry.getContent());
-            return new ResponseEntity<>(journalEntry,HttpStatus.OK);
+            return new ResponseEntity<>(journalEntry, HttpStatus.OK);
         }
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-    @PutMapping("id/{id}")
-    public ResponseEntity<JournalEntry> updateById(@PathVariable ObjectId id , @RequestBody JournalEntry newEntries){
+    @PutMapping("id/{userName}/{id}")
+    public ResponseEntity<JournalEntry> updateById(
+        @PathVariable ObjectId id,
+        @PathVariable String userName, 
+        @RequestBody JournalEntry newEntries
+        ){
 
         JournalEntry oldEntry  = journalServiceEntry.findById(id);
 
@@ -91,10 +95,10 @@ public class JournalEntryController {
         return new ResponseEntity<>(HttpStatus.NOT_FOUND); 
     }
 
-    @DeleteMapping("id/{id}")
-    public ResponseEntity<?> deleteById(@PathVariable ObjectId id){
-       journalServiceEntry.deleteById(id) ;
-       return   new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        
+    @DeleteMapping("id/{userName}/{id}")
+    public ResponseEntity<?> deleteById(@PathVariable ObjectId id, @PathVariable String userName) {
+        journalServiceEntry.deleteById(id, userName);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+
     }
 }
