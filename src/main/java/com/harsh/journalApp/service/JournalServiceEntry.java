@@ -42,11 +42,20 @@ public class JournalServiceEntry {
         
         return journalEntryRepository.findById(id).orElse(null);
     }
+    
+    @Transactional
     public void deleteById(ObjectId id ,String userName){
+       try{
         User  user =  userService.findByUserName(userName);
-        user.getJournalEntries().removeIf(x ->x.getId().equals(id));
-        userService.saveEntry(user);
-        journalEntryRepository.deleteById(id);
+        boolean removed = user.getJournalEntries().removeIf(x ->x.getId().equals(id));
+        if(removed)
+        {
+            userService.saveEntry(user);
+            journalEntryRepository.deleteById(id);
+        }
+       }catch(Exception e){
+        throw new RuntimeException("Error while deleting entry",e);
+       }
         
     }
 
